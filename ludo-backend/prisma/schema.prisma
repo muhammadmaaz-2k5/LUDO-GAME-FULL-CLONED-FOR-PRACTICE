@@ -1,0 +1,122 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-3.0.x", "rhel-openssl-1.0.x", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String       @id @default(uuid())
+  username    String?      @unique
+  name        String?
+  email       String       @unique
+  provider    AuthProvider
+  password    String?
+  rating      Int          @default(1200)
+  coins       Int          @default(1000)
+  gamesPlayed Int          @default(0)
+  gamesWon    Int          @default(0)
+  gamePlayers GamePlayer[]
+  createdAt   DateTime     @default(now())
+  lastLogin   DateTime?
+
+  @@index([rating])
+}
+
+model Game {
+  id             String       @id @default(uuid())
+  roomCode       String?      @unique
+  isPrivate      Boolean      @default(false)
+  mode           GameMode     @default(CLASSIC)
+  status         GameStatus   @default(WAITING)
+  maxPlayers     Int          @default(4)
+  timePerTurn    Int          @default(30) // turn timer in seconds
+  currentTurn    PlayerColor?
+  diceValue      Int?
+  hasRolled      Boolean      @default(false)
+  consecutiveSix Int          @default(0)
+  winnerColor    PlayerColor?
+  entryFee       Int          @default(0)
+  prizePool      Int          @default(0)
+  gameState      Json?        // snapshot of tokens and positions
+  startAt        DateTime     @default(now())
+  endAt          DateTime?
+  players        GamePlayer[]
+  moves          Move[]
+
+  @@index([status])
+  @@index([roomCode])
+}
+
+model GamePlayer {
+  id          String      @id @default(uuid())
+  gameId      String
+  game        Game        @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  userId      String?
+  user        User?       @relation(fields: [userId], references: [id])
+  color       PlayerColor
+  playerIndex Int         // 0: Red, 1: Green, 2: Yellow, 3: Blue
+  isHost      Boolean     @default(false)
+  isBot       Boolean     @default(false)
+  hasLeft     Boolean     @default(false)
+  rank        Int?        // 1 for 1st, 2 for 2nd, etc.
+  tokens      Json?       // array of 4 token positions & state
+  createdAt   DateTime    @default(now())
+
+  @@unique([gameId, color])
+  @@unique([gameId, playerIndex])
+  @@index([gameId])
+  @@index([userId])
+}
+
+model Move {
+  id              String      @id @default(uuid())
+  gameId          String
+  game            Game        @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  moveNumber      Int
+  playerColor     PlayerColor
+  diceRoll        Int
+  tokenId         Int?        // 0 to 3
+  fromPos         Int?        // track or home stretch position before move
+  toPos           Int?        // track or home stretch position after move
+  capturedTokenId Int?
+  capturedColor   PlayerColor?
+  isCut           Boolean     @default(false)
+  isHomeRun       Boolean     @default(false)
+  timeTaken       Int?        @default(0) // time taken in ms
+  createdAt       DateTime    @default(now())
+
+  @@index([gameId])
+}
+
+enum PlayerColor {
+  RED
+  GREEN
+  YELLOW
+  BLUE
+}
+
+enum GameStatus {
+  WAITING
+  IN_PROGRESS
+  COMPLETED
+  ABANDONED
+  CANCELLED
+}
+
+enum GameMode {
+  CLASSIC
+  QUICK
+  MASTER
+  TEAM_UP
+}
+
+enum AuthProvider {
+  EMAIL
+  GOOGLE
+  GITHUB
+  GUEST
+}
