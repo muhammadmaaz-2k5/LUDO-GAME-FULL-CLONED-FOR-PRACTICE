@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { Layout } from './layout'
 import './App.css'
@@ -33,8 +32,10 @@ function App() {
           <Route path="/settings" element={<Layout><Settings /></Layout>}>
             <Route index element={<Themes />} />
             <Route path="themes" element={<Themes />} />
+            <Route path="audio" element={<div />} />
+            <Route path="gameplay" element={<div />} />
+            <Route path="profile" element={<div />} />
           </Route>
-          
         </Routes>
       </BrowserRouter>
     </ThemesProvider>

@@ -1,7 +1,7 @@
 import { cn } from '../lib/utils';
 import { useSidebar } from '../hooks/useSidebar';
 import { buttonVariants } from './ui/button';
-import { useLocation, Link } from 'react-router-dom';
+import { useLocation, Link, useNavigate } from 'react-router-dom';
 import {
   Accordion,
   AccordionContent,
@@ -10,15 +10,15 @@ import {
 } from './subnav-accordian';
 import { useEffect, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
+import { useAuthStore } from '../store/useAuthStore';
 
 export function SideNav({ items, setOpen, className }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const { isOpen } = useSidebar();
   const [openItem, setOpenItem] = useState('');
   const [lastOpenItem, setLastOpenItem] = useState('');
-
-  // Dummy user state for ludo-game
-  const user = null;
+  const { user, logout } = useAuthStore();
 
   useEffect(() => {
     if (isOpen) {
@@ -29,9 +29,10 @@ export function SideNav({ items, setOpen, className }) {
     }
   }, [isOpen]);
 
-  const handleLogout = async (e) => {
+  const handleLogout = (e) => {
     e.preventDefault();
-    window.location.href = '/';
+    logout();
+    navigate('/');
   };
 
   return (
@@ -102,7 +103,7 @@ export function SideNav({ items, setOpen, className }) {
                 onClick={handleLogout}
                 className={cn(
                   buttonVariants({ variant: 'ghost' }),
-                  'group relative flex h-11 w-full justify-start items-center gap-3 px-3 rounded-lg text-textMain hover:bg-red-500/10 hover:text-red-400 transition-colors',
+                  'group relative flex h-11 w-full justify-start items-center gap-3 px-3 rounded-lg text-textMain hover:bg-red-500/10 hover:text-red-400 transition-colors cursor-pointer',
                 )}
               >
                 <item.icon className={cn('h-5 w-5 shrink-0', item.color)} />

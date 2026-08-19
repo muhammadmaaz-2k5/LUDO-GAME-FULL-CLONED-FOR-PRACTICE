@@ -1,10 +1,11 @@
+import { useAuthStore } from '../store/useAuthStore';
 import { SideNav } from './side-nav';
 import { UpperNavItems, LowerNavItems } from './constants/side-nav';
 import { cn } from '../lib/utils';
 import { Link } from 'react-router-dom';
 
 export default function Sidebar({ className }) {
-  const user = null; // Dummy for ludo-game
+  const { user } = useAuthStore();
 
   return (
     <nav
@@ -21,13 +22,15 @@ export default function Sidebar({ className }) {
         </Link>
 
         {user && (
-          <div className="mx-3 p-3 bg-bgDark rounded-xl border border-white/5 flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-green-500 to-emerald-700 flex items-center justify-center font-bold text-white shadow">
-              {user.name.charAt(0).toUpperCase()}
+          <div className="mx-3 p-3 bg-bgDark rounded-xl border border-white/5 flex items-center gap-3 shadow">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-green-500 to-emerald-700 flex items-center justify-center font-bold text-white shadow">
+              {user.name?.charAt(0).toUpperCase() || 'P'}
             </div>
             <div className="overflow-hidden">
               <p className="text-xs font-bold text-white truncate">{user.name}</p>
-              <p className="text-[11px] text-green-400 font-semibold">Rating: {user.rating || 1200}</p>
+              <p className="text-[11px] text-green-400 font-semibold">
+                Rating: {user.rating || 1200}
+              </p>
             </div>
           </div>
         )}

@@ -1,42 +1,58 @@
 export const LUDO_THEMES = [
   {
-    name: 'classic',
-    className: 'theme-classic',
+    id: 'theme-royal-emerald',
+    name: 'Royal Emerald',
+    className: 'theme-royal-emerald',
+    image: '/ludo-images/bg_game.jpg',
+    boardBg: '/ludo-images/bg_game.jpg',
+    description: 'Classic royal velvet texture with rich emerald styling',
     colors: {
-      red: '#ef4444',    // red-500
-      green: '#22c55e',  // green-500
-      yellow: '#eab308', // yellow-500
-      blue: '#3b82f6',   // blue-500
-    }
+      red: '#ef4444',
+      green: '#22c55e',
+      yellow: '#eab308',
+      blue: '#3b82f6',
+    },
   },
   {
-    name: 'neon',
-    className: 'theme-neon',
+    id: 'theme-cyber-neon',
+    name: 'Cyber Neon',
+    className: 'theme-cyber-neon',
+    image: '/ludo-images/bg_game2.png',
+    boardBg: '/ludo-images/bg_game2.png',
+    description: 'Electric midnight cyberpunk arena with glowing tracks',
     colors: {
-      red: '#ff007f',    // neon pink/red
-      green: '#39ff14',  // neon green
-      yellow: '#fcf601', // neon yellow
-      blue: '#00ffff',   // cyan
-    }
+      red: '#ff007f',
+      green: '#39ff14',
+      yellow: '#fcf601',
+      blue: '#00ffff',
+    },
   },
   {
-    name: 'pastel',
-    className: 'theme-pastel',
+    id: 'theme-desert-palace',
+    name: 'Desert Palace',
+    className: 'theme-desert-palace',
+    image: '/ludo-images/bg_game3.png',
+    boardBg: '/ludo-images/bg_game3.png',
+    description: 'Luxurious desert gold arena with ornate wooden patterns',
     colors: {
-      red: '#fca5a5',    // red-300
-      green: '#86efac',  // green-300
-      yellow: '#fde047', // yellow-300
-      blue: '#93c5fd',   // blue-300
-    }
+      red: '#dc2626',
+      green: '#16a34a',
+      yellow: '#f59e0b',
+      blue: '#2563eb',
+    },
   },
   {
-    name: 'ocean',
-    className: 'theme-ocean',
+    id: 'theme-cosmic-galaxy',
+    name: 'Cosmic Galaxy',
+    className: 'theme-cosmic-galaxy',
+    image: '/ludo-images/bg_game4.png',
+    boardBg: '/ludo-images/bg_game4.png',
+    description: 'Deep astral realm with starlight nebula styling',
     colors: {
-      red: '#f43f5e',    // rose-500
-      green: '#14b8a6',  // teal-500
-      yellow: '#fbbf24', // amber-400
-      blue: '#0ea5e9',   // sky-500
-    }
-  }
+      red: '#f43f5e',
+      green: '#10b981',
+      yellow: '#fbbf24',
+      blue: '#6366f1',
+    },
+  },
 ];

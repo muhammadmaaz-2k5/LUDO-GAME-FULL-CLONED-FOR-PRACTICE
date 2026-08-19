@@ -9,9 +9,11 @@ export function ThemesProvider({ children }) {
     if (savedTheme) {
       try {
         const parsed = JSON.parse(savedTheme);
-        const exists = LUDO_THEMES.find((t) => t.name === parsed.name);
+        const exists = LUDO_THEMES.find(
+          (t) => t.id === parsed.id || t.name.toLowerCase() === (parsed.name || '').toLowerCase()
+        );
         return exists || LUDO_THEMES[0];
-      } catch (e) {
+      } catch {
         return LUDO_THEMES[0];
       }
     }
@@ -24,17 +26,17 @@ export function ThemesProvider({ children }) {
   };
 
   useEffect(() => {
-    // Apply theme variables to root or body if needed
-    // For now we just keep it in context
-    const root = document.documentElement;
-    root.style.setProperty('--ludo-red', theme.colors.red);
-    root.style.setProperty('--ludo-green', theme.colors.green);
-    root.style.setProperty('--ludo-yellow', theme.colors.yellow);
-    root.style.setProperty('--ludo-blue', theme.colors.blue);
+    if (theme?.colors) {
+      const root = document.documentElement;
+      root.style.setProperty('--ludo-red', theme.colors.red);
+      root.style.setProperty('--ludo-green', theme.colors.green);
+      root.style.setProperty('--ludo-yellow', theme.colors.yellow);
+      root.style.setProperty('--ludo-blue', theme.colors.blue);
+    }
   }, [theme]);
 
   return (
-    <ThemeContext.Provider value={{ theme, setTheme }}>
+    <ThemeContext.Provider value={{ theme, setTheme, themes: LUDO_THEMES }}>
       {children}
     </ThemeContext.Provider>
   );

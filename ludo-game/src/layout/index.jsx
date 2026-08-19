@@ -1,6 +1,7 @@
 import React from 'react';
 import Sidebar from '../components/sidebar';
 import Navbar from '../components/Navbar';
+import { ToastContainer } from '../components/common/ToastContainer';
 
 export const Layout = ({ children }) => {
   return (
@@ -10,6 +11,7 @@ export const Layout = ({ children }) => {
       <main className="flex-1 pt-20 md:pt-6 pb-12 px-4 md:px-8 max-w-7xl mx-auto w-full">
         {children}
       </main>
+      <ToastContainer />
     </div>
   );
 };
