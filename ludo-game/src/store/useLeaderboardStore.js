@@ -1,8 +1,17 @@
 import { create } from 'zustand';
 
 const getApiBaseUrl = () => {
-  if (typeof window !== 'undefined' && window.location.hostname) {
-    return `http://${window.location.hostname}:3000/api`;
+  if (import.meta.env.VITE_BACKEND_URL) {
+    const base = import.meta.env.VITE_BACKEND_URL.replace(/\/+$/, '');
+    return `${base}/api`;
+  }
+  if (typeof window !== 'undefined') {
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      return 'http://localhost:3000/api';
+    }
+    if (/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(window.location.hostname)) {
+      return `http://${window.location.hostname}:3000/api`;
+    }
   }
   return 'http://localhost:3000/api';
 };
