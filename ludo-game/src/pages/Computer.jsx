@@ -359,8 +359,45 @@ export default function Computer() {
         advanceLocalTurn(nextState);
       }
     },
-    [isOnlineMatch, activeGame, isMyTurn, socketMoveToken, localGameState, localWinner, advanceLocalTurn]
+    [isOnlineMatch, activeGame, socketMoveToken, localGameState, localWinner, advanceLocalTurn]
   );
+
+  // Auto-move single valid pawn helper for seamless responsiveness
+  useEffect(() => {
+    if (currentGameState?.status !== 'IN_PROGRESS' || currentWinner) return;
+    if (!currentGameState?.hasRolled || currentGameState?.isRolling) return;
+
+    if (currentGameState?.validMoves?.length === 1) {
+      const singleTokenId = currentGameState.validMoves[0];
+      const moveTimer = setTimeout(() => {
+        if (isOnlineMatch) {
+          if (activeGame && isMyTurn) {
+            socketMoveToken(activeGame.id, singleTokenId);
+          }
+        } else {
+          const curr = localGameState.players[localGameState.currentTurnIndex];
+          if (curr && !curr.isBot) {
+            handleTokenMove(curr.color, singleTokenId);
+          }
+        }
+      }, 450);
+
+      return () => clearTimeout(moveTimer);
+    }
+  }, [
+    currentGameState?.hasRolled,
+    currentGameState?.isRolling,
+    currentGameState?.validMoves,
+    currentGameState?.currentTurn,
+    currentGameState?.status,
+    isOnlineMatch,
+    isMyTurn,
+    activeGame,
+    socketMoveToken,
+    handleTokenMove,
+    localGameState,
+    currentWinner,
+  ]);
 
   // Auto Bot Turn Execution for Local mode
   useEffect(() => {

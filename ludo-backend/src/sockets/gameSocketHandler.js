@@ -1,6 +1,6 @@
 import { roomManager } from './roomManager.js';
 
-export function registerGameSocketHandlers(io, socket) {
+export function setupGameSocketHandlers(io, socket) {
   // 1. Join Matchmaking Queue
   socket.on('join_queue', ({ mode = 'CLASSIC', players = 2 }) => {
     try {
@@ -19,22 +19,13 @@ export function registerGameSocketHandlers(io, socket) {
               gameState: result.room,
               yourColor: p.color,
             });
+
             io.to(p.socketId).emit('game_started', {
               gameState: result.room,
               currentTurn: result.room.currentTurn,
               yourColor: p.color,
             });
           }
-        });
-
-        io.to(result.room.id).emit('match_found', {
-          roomId: result.room.id,
-          roomCode: result.room.roomCode,
-          gameState: result.room,
-        });
-        io.to(result.room.id).emit('game_started', {
-          gameState: result.room,
-          currentTurn: result.room.currentTurn,
         });
       } else {
         socket.emit('queue_joined', {
@@ -120,7 +111,7 @@ export function registerGameSocketHandlers(io, socket) {
   // 5. Roll Dice
   socket.on('roll_dice', ({ gameId }) => {
     try {
-      const rollResult = roomManager.rollDice(gameId, socket.id);
+      const rollResult = roomManager.rollDice(gameId, socket);
       if (!rollResult) return;
 
       console.log(`🎲 Dice rolled in room ${gameId}: Player ${rollResult.room.currentTurn} rolled ${rollResult.rolledValue}. Valid moves: ${rollResult.validMoves.length}`);
@@ -155,7 +146,7 @@ export function registerGameSocketHandlers(io, socket) {
   // 6. Move Token
   socket.on('move_token', ({ gameId, tokenId }) => {
     try {
-      const moveResult = roomManager.moveToken(gameId, socket.id, tokenId);
+      const moveResult = roomManager.moveToken(gameId, socket, tokenId);
       if (!moveResult) return;
 
       console.log(`♟️ Token moved in room ${gameId}: tokenId ${tokenId}. New turn: ${moveResult.room.currentTurn}`);
@@ -179,74 +170,89 @@ export function registerGameSocketHandlers(io, socket) {
     }
   });
 
-  // 7. Turn Timeout Trigger
+  // 7. Timeout Turn Progression
   socket.on('turn_timeout', ({ gameId }) => {
     try {
       const room = roomManager.getRoomById(gameId);
       if (room && room.status === 'IN_PROGRESS') {
         roomManager.advanceTurn(room);
-        console.log(`⏰ Turn timed out. Advancing to ${room.currentTurn}`);
         io.to(gameId).emit('turn_changed', {
           gameState: room,
           currentTurn: room.currentTurn,
         });
       }
     } catch (err) {
-      socket.emit('error', { message: err.message });
+      console.error('Error in turn_timeout:', err);
     }
   });
 
-  // 8. Send In-Game Chat / Emoji Reaction
+  // 8. In-Game Chat / Emoji Reaction
   socket.on('send_chat', ({ gameId, message, emoji }) => {
-    const user = socket.user || { name: 'Player' };
-    io.to(gameId).emit('chat_received', {
-      sender: user.name,
-      message,
-      emoji,
-      timestamp: Date.now(),
-    });
+    try {
+      const sender = socket.user?.name || 'Player';
+      io.to(gameId).emit('chat_received', {
+        sender,
+        message,
+        emoji,
+        timestamp: Date.now(),
+      });
+    } catch (err) {
+      console.error('Error in send_chat:', err);
+    }
   });
 
-  // 9. Leave Room Explicitly
+  // 9. Leave Room / Match
   socket.on('leave_room', () => {
-    const result = roomManager.handleDisconnect(socket.id);
-    if (result && result.room) {
-      if (result.gameOver) {
-        console.log(`🏆 Game ended by forfeit. Winner: ${result.winner.name}`);
-        io.to(result.roomId).emit('game_over', {
-          winner: result.winner,
-          gameState: result.room,
-          reason: result.reason,
-        });
-      } else {
-        io.to(result.roomId).emit('player_left', {
-          socketId: socket.id,
-          leavingPlayer: result.leavingPlayer,
-          gameState: result.room,
-        });
+    try {
+      const result = roomManager.handleDisconnect(socket.id);
+      if (result) {
+        if (result.gameOver) {
+          io.to(result.roomId).emit('game_over', {
+            winner: result.winner,
+            gameState: result.room,
+            reason: result.reason,
+          });
+        } else {
+          io.to(result.roomId).emit('player_left', {
+            leavingPlayer: result.leavingPlayer,
+            gameState: result.room,
+          });
+          io.to(result.roomId).emit('turn_changed', {
+            gameState: result.room,
+            currentTurn: result.room.currentTurn,
+          });
+        }
       }
+    } catch (err) {
+      console.error('Error in leave_room:', err);
     }
   });
 
   // 10. Disconnect Handler
   socket.on('disconnect', () => {
     console.log(`🔌 Client disconnected: ${socket.id}`);
-    const result = roomManager.handleDisconnect(socket.id);
-    if (result && result.room) {
-      if (result.gameOver) {
-        console.log(`🏆 Game ended by forfeit due to disconnect. Winner: ${result.winner.name}`);
-        io.to(result.roomId).emit('game_over', {
-          winner: result.winner,
-          gameState: result.room,
-          reason: result.reason,
-        });
-      } else {
-        io.to(result.roomId).emit('player_left', {
-          socketId: socket.id,
-          leavingPlayer: result.leavingPlayer,
-          gameState: result.room,
-        });
+    try {
+      const result = roomManager.handleDisconnect(socket.id);
+      if (result) {
+        if (result.gameOver) {
+          io.to(result.roomId).emit('game_over', {
+            winner: result.winner,
+            gameState: result.room,
+            reason: result.reason,
+          });
+        } else {
+          io.to(result.roomId).emit('player_left', {
+            leavingPlayer: result.leavingPlayer,
+            gameState: result.room,
+          });
+          io.to(result.roomId).emit('turn_changed', {
+            gameState: result.room,
+            currentTurn: result.room.currentTurn,
+          });
+        }
       }
+    } catch (err) {
+      console.error('Error handling socket disconnect:', err);
     }
   });
 }

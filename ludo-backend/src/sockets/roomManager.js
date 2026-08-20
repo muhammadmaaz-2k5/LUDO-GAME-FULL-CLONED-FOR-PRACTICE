@@ -189,13 +189,27 @@ class RoomManager {
   }
 
   // Execute Roll Dice
-  rollDice(roomId, socketId) {
+  rollDice(roomId, socket) {
     const room = this.rooms.get(roomId);
     if (!room || room.status !== 'IN_PROGRESS') return null;
 
     const currentPlayer = room.players[room.currentTurnIndex];
-    if (currentPlayer.socketId !== socketId || room.hasRolled || room.isRolling) {
+    const socketId = typeof socket === 'string' ? socket : socket?.id;
+    const userId = typeof socket === 'object' ? socket?.user?.id : null;
+
+    const isCurrentPlayer =
+      currentPlayer.socketId === socketId ||
+      (userId && currentPlayer.id === userId) ||
+      (room.players.find((p) => p.socketId === socketId)?.color === currentPlayer.color);
+
+    if (!isCurrentPlayer || room.hasRolled || room.isRolling) {
       return null;
+    }
+
+    if (socketId) {
+      currentPlayer.socketId = socketId;
+      this.socketToRoom.set(socketId, roomId);
+      if (typeof socket === 'object' && socket.join) socket.join(roomId);
     }
 
     room.isRolling = true;
@@ -235,15 +249,36 @@ class RoomManager {
   }
 
   // Execute Token Move
-  moveToken(roomId, socketId, tokenId) {
+  moveToken(roomId, socket, tokenId) {
     const room = this.rooms.get(roomId);
     if (!room || room.status !== 'IN_PROGRESS' || !room.hasRolled) return null;
 
     const currentPlayer = room.players[room.currentTurnIndex];
-    if (currentPlayer.socketId !== socketId) return null;
+    const socketId = typeof socket === 'string' ? socket : socket?.id;
+    const userId = typeof socket === 'object' ? socket?.user?.id : null;
 
-    const outcome = processServerMove(room, currentPlayer.color, tokenId, room.diceValue);
-    if (!outcome.valid) return null;
+    const isCurrentPlayer =
+      currentPlayer.socketId === socketId ||
+      (userId && currentPlayer.id === userId) ||
+      (room.players.find((p) => p.socketId === socketId)?.color === currentPlayer.color);
+
+    if (!isCurrentPlayer) {
+      console.warn(`[moveToken] Unauthorized: socket ${socketId} cannot move for ${currentPlayer.name} (${currentPlayer.color})`);
+      return null;
+    }
+
+    if (socketId) {
+      currentPlayer.socketId = socketId;
+      this.socketToRoom.set(socketId, roomId);
+      if (typeof socket === 'object' && socket.join) socket.join(roomId);
+    }
+
+    const parsedTokenId = parseInt(tokenId, 10);
+    const outcome = processServerMove(room, currentPlayer.color, parsedTokenId, room.diceValue);
+    if (!outcome.valid) {
+      console.warn(`[moveToken] processServerMove invalid: ${outcome.error}`);
+      return null;
+    }
 
     room.players = outcome.updatedPlayers;
 
@@ -257,11 +292,13 @@ class RoomManager {
     }
 
     if (outcome.awardsExtraTurn) {
+      // Player rolled 6 or captured pawn -> gets extra roll on same turn
       room.diceValue = null;
       room.hasRolled = false;
       room.isRolling = false;
       room.validMoves = [];
     } else {
+      // Normal move completed -> pass turn to next player
       this.advanceTurn(room);
     }
 
@@ -294,12 +331,10 @@ class RoomManager {
     this.socketToRoom.delete(socketId);
 
     if (room.status === 'IN_PROGRESS') {
-      // Find remaining active human players
       const remainingHumans = room.players.filter(
         (p) => p.socketId && p.socketId !== socketId && !p.isBot
       );
 
-      // If only 1 human player remains (e.g. in a 2P battle), award Victory by Forfeit!
       if (remainingHumans.length === 1) {
         const winner = remainingHumans[0];
         room.status = 'COMPLETED';
@@ -316,13 +351,11 @@ class RoomManager {
         };
       }
 
-      // If 2+ players remain (e.g. in a 4P match), convert leaver to Bot and continue
       if (leavingPlayer) {
         leavingPlayer.isBot = true;
         leavingPlayer.name += ' (Bot)';
       }
 
-      // If it was the disconnected player's turn, advance turn so the game continues
       if (room.currentTurn === leavingPlayer?.color) {
         this.advanceTurn(room);
       }
@@ -334,7 +367,6 @@ class RoomManager {
         gameOver: false,
       };
     } else if (room.status === 'WAITING') {
-      // In lobby, simply remove the player
       room.players = room.players.filter((p) => p.socketId !== socketId);
       if (room.players.length === 0) {
         this.rooms.delete(roomId);
