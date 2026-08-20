@@ -13,7 +13,7 @@ const getApiBaseUrl = () => {
       return `http://${window.location.hostname}:3000/api`;
     }
   }
-  return 'http://localhost:3000/api';
+  return 'https://ludo-game-full-cloned-for-practice.onrender.com/api';
 };
 
 const DEFAULT_LEADERBOARD = [

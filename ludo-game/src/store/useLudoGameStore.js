@@ -15,7 +15,7 @@ const getSocketUrl = () => {
       return `http://${window.location.hostname}:3000`;
     }
   }
-  return 'http://localhost:3000';
+  return 'https://ludo-game-full-cloned-for-practice.onrender.com';
 };
 
 export const useLudoGameStore = create((set, get) => ({
@@ -39,6 +39,8 @@ export const useLudoGameStore = create((set, get) => ({
 
     const token = localStorage.getItem('ludo_token');
     const socketUrl = getSocketUrl();
+
+    console.log('🔌 Connecting Socket.IO to:', socketUrl);
 
     const newSocket = io(socketUrl, {
       auth: { token },
