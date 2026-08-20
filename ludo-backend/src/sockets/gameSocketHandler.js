@@ -256,3 +256,6 @@ export function setupGameSocketHandlers(io, socket) {
     }
   });
 }
+
+export const registerGameSocketHandlers = setupGameSocketHandlers;
+
