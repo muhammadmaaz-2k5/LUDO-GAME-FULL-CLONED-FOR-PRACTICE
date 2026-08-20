@@ -23,6 +23,23 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(morgan('dev'));
 
+// Welcome Root Route
+app.get('/', (req, res) => {
+  res.json({
+    status: 'ok',
+    service: 'Pak Ludo Real-time Backend',
+    version: '1.0.0',
+    endpoints: {
+      health: '/api/health',
+      auth: '/api/auth',
+      leaderboard: '/api/leaderboard',
+      games: '/api/games',
+    },
+    websocket: 'ws://' + (req.headers.host || 'localhost:3000'),
+    timestamp: new Date().toISOString(),
+  });
+});
+
 // Mount API Routes
 app.use('/api', routes);
 
